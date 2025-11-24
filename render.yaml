@@ -12,6 +12,8 @@ services:
     envVars:
       - key: MONGODB_URL
         sync: false
+      - key: MOGODB_URL
+        sync: false
       - key: ACCESS_TOKEN_SECRET
         sync: false
       - key: ACCESS_TOKEN_EXPIRY
