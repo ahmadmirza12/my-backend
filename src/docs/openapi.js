@@ -160,6 +160,7 @@ export const openapiSpec = {
         tags: ["Auth"],
         summary: "Logout",
         responses: { 200: { description: "OK" } },
+        security: [{ BearerAuth: [] }],
       },
     },
     "/api/v1/auth/otp/send": {

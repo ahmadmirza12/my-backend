@@ -22,3 +22,8 @@ export function requireAdmin(req, res, next) {
   if (!req.user || req.user.role !== 'admin') return res.status(403).json({ message: 'Forbidden' })
   next()
 }
+
+export function requireUser(req, res, next) {
+  if (!req.user || req.user.role !== 'user') return res.status(403).json({ message: 'Forbidden' })
+  next()
+}
