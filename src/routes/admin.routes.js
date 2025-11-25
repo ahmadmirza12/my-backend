@@ -8,6 +8,6 @@ const router = Router()
 router.post('/products', requireAuth, requireAdmin, createProduct)
 router.put('/products/:id', requireAuth, requireAdmin, updateProduct)
 router.delete('/products/:id', requireAuth, requireAdmin, deleteProduct)
-router.post('/products/:id/images', requireAuth, requireAdmin, upload.array('images', 5), addProductImages)
+router.post('/products/images', requireAuth, requireAdmin, upload.array('images', 5), addProductImages)
 
 export default router

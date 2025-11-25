@@ -315,18 +315,10 @@ export const openapiSpec = {
         security: [{ BearerAuth: [] }],
       },
     },
-    "/api/v1/admin/products/{id}/images": {
+    "/api/v1/admin/products/images": {
       post: {
         tags: ["Admin"],
-        summary: "Upload product images",
-        parameters: [
-          {
-            name: "id",
-            in: "path",
-            required: true,
-            schema: { type: "string" },
-          },
-        ],
+        summary: "Upload images",
         requestBody: {
           required: true,
           content: {
@@ -343,7 +335,21 @@ export const openapiSpec = {
             },
           },
         },
-        responses: { 200: { description: "OK" } },
+        responses: {
+          200: {
+            description: "OK",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    urls: { type: "array", items: { type: "string", format: "uri" } },
+                  },
+                },
+              },
+            },
+          },
+        },
         security: [{ BearerAuth: [] }],
       },
     },

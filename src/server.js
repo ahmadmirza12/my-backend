@@ -10,12 +10,16 @@ dotenv.config({
 
 
 
+const port = process.env.PORT || 8000
+app.listen(port, () => {
+    console.log(`SERVER IS RUNNING ON ${port}`)
+})
 connectDB()
-.then(async () => {
-    await ensureDefaultAdmin()
-    app.listen(process.env.PORT,()=>{
-        console.log(`SERVER IS RUNNING ON ${process.env.PORT}`)
-    })
-}).catch((err) => {
-    console.log("SERVER IS NOT CONNECTED",err)
+.then(async (ok) => {
+    if (ok) {
+        await ensureDefaultAdmin()
+    }
+})
+.catch((err) => {
+    console.log("SERVER IS NOT CONNECTED", err)
 });

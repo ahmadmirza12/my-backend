@@ -32,6 +32,19 @@ const OrderSchema = new mongoose.Schema(
       postalCode: String,
       country: String
     },
+    tracking: {
+      carrier: String,
+      trackingNumber: String,
+      url: String,
+      shippedAt: Date,
+      deliveredAt: Date
+    },
+    statusHistory: [
+      {
+        status: { type: String },
+        at: { type: Date }
+      }
+    ],
     notes: String
   },
   { timestamps: true }

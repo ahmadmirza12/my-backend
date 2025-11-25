@@ -45,7 +45,12 @@ export async function addProductImages(req, res) {
   const { id } = req.params
   const files = req.files || []
   const paths = files.map(f => `/uploads/${f.filename}`)
-  const item = await Product.findByIdAndUpdate(id, { $push: { images: { $each: paths } } }, { new: true })
+  const base = `${req.protocol}://${req.get('host')}`
+  const urls = paths.map(p => `${base}${p}`)
+  if (!id) {
+    return res.status(200).json({ urls })
+  }
+  const item = await Product.findByIdAndUpdate(id, { $push: { images: { $each: urls } } }, { new: true })
   if (!item) return res.status(404).json({ message: 'Not found' })
   return res.status(200).json({ item })
 }

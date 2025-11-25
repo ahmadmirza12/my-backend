@@ -9,12 +9,6 @@ import orderRouter from './routes/order.routes.js';
 import paymentsRouter from './routes/payments.routes.js';
 import swaggerUi from 'swagger-ui-express';
 import { openapiSpec } from './docs/openapi.js';
-const spec = {
-  ...openapiSpec,
-  servers: [
-    { url: process.env.PUBLIC_URL || `http://localhost:${process.env.PORT || 8000}` }
-  ]
-}
 
 const app = express();
 
@@ -37,7 +31,7 @@ app.use('/api/v1/products', productRouter);
 app.use('/api/v1/admin', adminRouter);
 app.use('/api/v1/orders', orderRouter);
 app.use('/api/v1/payments', paymentsRouter);
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(spec));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openapiSpec));
 
 
 
