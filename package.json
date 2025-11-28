@@ -4,9 +4,9 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "start": "node -r dotenv/config dist/server.js",
+    "start": "node -r dotenv/config dist/server.cjs",
     "dev": "nodemon -r dotenv/config src/server.js",
-    "build": "esbuild src/server.js --bundle --platform=node --format=esm --outfile=dist/server.js",
+    "build": "esbuild src/server.js --bundle --platform=node --format=cjs --external:bcrypt --outfile=dist/server.cjs",
     "postinstall": "npm run build"
   },
   "author": "",
@@ -20,7 +20,7 @@
     "nodemon": "^3.1.11"
   },
   "dependencies": {
-    "bcrypt": "^6.0.0",
+    "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "crypto": "^1.0.1",

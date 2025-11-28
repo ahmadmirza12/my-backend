@@ -1,5 +1,6 @@
 import { Order } from '../models/order.model.js'
 import { Product } from '../models/product.model.js'
+import mongoose from 'mongoose'
 
 export async function createOrder(req, res) {
   const { items = [], paymentMethod = 'cod', shippingAddress } = req.body
@@ -31,7 +32,11 @@ export async function getOrder(req, res) {
   const order = await Order.findById(id).populate('user', 'name email').lean()
   if (!order) return res.status(404).json({ message: 'Not found' })
   if (req.user.role !== 'admin' && String(order.user) !== String(req.user._id)) return res.status(403).json({ message: 'Forbidden' })
-  const ids = Array.from(new Set((order.items || []).map(i => String(i.product))))
+  const ids = Array.from(new Set((order.items || []).map(i => {
+    const p = i.product
+    const pid = (p && typeof p === 'object') ? p._id : p
+    return pid ? String(pid) : null
+  }).filter(Boolean))).filter(id => mongoose.Types.ObjectId.isValid(id))
   const products = await Product.find({ _id: { $in: ids } }).lean()
   const pmap = new Map(products.map(p => [String(p._id), p]))
   const base = `${req.protocol}://${req.get('host')}`
@@ -53,10 +58,10 @@ export async function getOrder(req, res) {
     payment: { method: order.paymentMethod, status: order.paymentStatus },
     shipping: { ...order.shippingAddress, estimatedDeliveryDate: order.estimatedDeliveryDate },
     products: (order.items || []).map(i => {
-      const pr = pmap.get(String(i.product))
+      const pr = (i.product && typeof i.product === 'object') ? i.product : pmap.get(String(i.product))
       const images = pr?.images || []
       return {
-        product_id: String(i.product),
+        product_id: (i.product && typeof i.product === 'object') ? String(i.product._id) : String(i.product),
         name: pr?.title || i.title,
         price: i.price,
         quantity: i.quantity,
@@ -79,7 +84,11 @@ export async function listMyOrders(req, res) {
     Order.find({ user: req.user._id }).sort({ createdAt: -1 }).skip(skip).limit(Number(limit)).lean(),
     Order.countDocuments({ user: req.user._id })
   ])
-  const ids = Array.from(new Set(raw.flatMap(o => (o.items || []).map(i => String(i.product)))))
+  const ids = Array.from(new Set(raw.flatMap(o => (o.items || []).map(i => {
+    const p = i.product
+    const pid = (p && typeof p === 'object') ? p._id : p
+    return pid ? String(pid) : null
+  })).filter(Boolean))).filter(id => mongoose.Types.ObjectId.isValid(id))
   const products = await Product.find({ _id: { $in: ids } }).lean()
   const pmap = new Map(products.map(p => [String(p._id), p]))
   const base = `${req.protocol}://${req.get('host')}`
@@ -103,10 +112,10 @@ export async function listMyOrders(req, res) {
     payment: { method: o.paymentMethod, status: o.paymentStatus },
     shipping: { ...o.shippingAddress, estimatedDeliveryDate: o.estimatedDeliveryDate },
     products: (o.items || []).map(i => {
-      const pr = pmap.get(String(i.product))
+      const pr = (i.product && typeof i.product === 'object') ? i.product : pmap.get(String(i.product))
       const images = pr?.images || []
       return {
-        product_id: String(i.product),
+        product_id: (i.product && typeof i.product === 'object') ? String(i.product._id) : String(i.product),
         name: pr?.title || i.title,
         price: i.price,
         quantity: i.quantity,
@@ -127,7 +136,11 @@ export async function listMyOrdersFull(req, res) {
   const raw = await Order.find({ user: req.user._id })
     .sort({ createdAt: -1 })
     .lean()
-  const ids = Array.from(new Set(raw.flatMap(o => (o.items || []).map(i => String(i.product)))))
+  const ids = Array.from(new Set(raw.flatMap(o => (o.items || []).map(i => {
+    const p = i.product
+    const pid = (p && typeof p === 'object') ? p._id : p
+    return pid ? String(pid) : null
+  })).filter(Boolean))).filter(id => mongoose.Types.ObjectId.isValid(id))
   const products = await Product.find({ _id: { $in: ids } }).lean()
   const pmap = new Map(products.map(p => [String(p._id), p]))
   const base = `${req.protocol}://${req.get('host')}`
@@ -141,7 +154,7 @@ export async function listMyOrdersFull(req, res) {
     items: (o.items || []).map(i => ({
       ...i,
       product: pmap.get(String(i.product)) || i.product,
-      product_id: String(i.product),
+      product_id: (i.product && typeof i.product === 'object') ? String(i.product._id) : String(i.product),
       image_url: toAbs(pmap.get(String(i.product))?.images?.[0])
     }))
   }))
@@ -163,7 +176,11 @@ export async function listOrders(req, res) {
       .lean(),
     Order.countDocuments(filter)
   ])
-  const ids = Array.from(new Set(raw.flatMap(o => (o.items || []).map(i => String(i.product)))))
+  const ids = Array.from(new Set(raw.flatMap(o => (o.items || []).map(i => {
+    const p = i.product
+    const pid = (p && typeof p === 'object') ? p._id : p
+    return pid ? String(pid) : null
+  })).filter(Boolean))).filter(id => mongoose.Types.ObjectId.isValid(id))
   const products = await Product.find({ _id: { $in: ids } }).lean()
   const pmap = new Map(products.map(p => [String(p._id), p]))
   const base = `${req.protocol}://${req.get('host')}`
@@ -191,7 +208,7 @@ export async function listOrders(req, res) {
       const pr = (i.product && typeof i.product === 'object') ? i.product : pmap.get(String(i.product))
       const images = pr?.images || []
       return {
-        product_id: String(i.product),
+        product_id: (i.product && typeof i.product === 'object') ? String(i.product._id) : String(i.product),
         name: pr?.title || i.title,
         price: i.price,
         quantity: i.quantity,
