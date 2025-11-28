@@ -5,11 +5,15 @@ import { sendOtpMail } from '../services/mailer.js'
 
 function setTokenCookie(res, token) {
   const isProd = process.env.NODE_ENV === 'production'
+  const configured = process.env.JWT_EXPIRES || process.env.ACCESS_TOKEN_EXPIRY
+  const val = String(configured || '').toLowerCase()
+  const disable = val === 'never' || val === 'none' || val === '0' || val === 'false'
+  const maxAge = disable ? 10 * 365 * 24 * 60 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000
   res.cookie('token', token, {
     httpOnly: true,
     secure: isProd,
     sameSite: isProd ? 'strict' : 'lax',
-    maxAge: 7 * 24 * 60 * 60 * 1000,
+    maxAge,
     path: '/'
   })
 }

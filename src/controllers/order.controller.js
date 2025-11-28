@@ -35,8 +35,9 @@ export async function getOrder(req, res) {
   const products = await Product.find({ _id: { $in: ids } }).lean()
   const pmap = new Map(products.map(p => [String(p._id), p]))
   const base = `${req.protocol}://${req.get('host')}`
+  const placeholder = process.env.PLACEHOLDER_IMAGE_URL || 'https://via.placeholder.com/300?text=No+Image'
   const toAbs = (u) => {
-    if (!u || typeof u !== 'string') return null
+    if (!u || typeof u !== 'string') return placeholder
     if (u.startsWith('http://') || u.startsWith('https://')) return u
     return `${base}${u.startsWith('/') ? u : `/uploads/${u}`}`
   }
@@ -82,8 +83,9 @@ export async function listMyOrders(req, res) {
   const products = await Product.find({ _id: { $in: ids } }).lean()
   const pmap = new Map(products.map(p => [String(p._id), p]))
   const base = `${req.protocol}://${req.get('host')}`
+  const placeholder = process.env.PLACEHOLDER_IMAGE_URL || 'https://via.placeholder.com/300?text=No+Image'
   const toAbs = (u) => {
-    if (!u || typeof u !== 'string') return null
+    if (!u || typeof u !== 'string') return placeholder
     if (u.startsWith('http://') || u.startsWith('https://')) return u
     return `${base}${u.startsWith('/') ? u : `/uploads/${u}`}`
   }
@@ -152,15 +154,22 @@ export async function listOrders(req, res) {
   if (status) filter.status = status
   const skip = (Number(page) - 1) * Number(limit)
   const [raw, total] = await Promise.all([
-    Order.find(filter).sort({ createdAt: -1 }).skip(skip).limit(Number(limit)).populate('user', 'name email').lean(),
+    Order.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(Number(limit))
+      .populate('user', 'name email')
+      .populate({ path: 'items.product', select: 'title images' })
+      .lean(),
     Order.countDocuments(filter)
   ])
   const ids = Array.from(new Set(raw.flatMap(o => (o.items || []).map(i => String(i.product)))))
   const products = await Product.find({ _id: { $in: ids } }).lean()
   const pmap = new Map(products.map(p => [String(p._id), p]))
   const base = `${req.protocol}://${req.get('host')}`
+  const placeholder = process.env.PLACEHOLDER_IMAGE_URL || 'https://via.placeholder.com/300?text=No+Image'
   const toAbs = (u) => {
-    if (!u || typeof u !== 'string') return null
+    if (!u || typeof u !== 'string') return placeholder
     if (u.startsWith('http://') || u.startsWith('https://')) return u
     return `${base}${u.startsWith('/') ? u : `/uploads/${u}`}`
   }
@@ -179,7 +188,7 @@ export async function listOrders(req, res) {
     payment: { method: o.paymentMethod, status: o.paymentStatus },
     shipping: { ...o.shippingAddress, estimatedDeliveryDate: o.estimatedDeliveryDate },
     products: (o.items || []).map(i => {
-      const pr = pmap.get(String(i.product))
+      const pr = (i.product && typeof i.product === 'object') ? i.product : pmap.get(String(i.product))
       const images = pr?.images || []
       return {
         product_id: String(i.product),
