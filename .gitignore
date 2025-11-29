@@ -9,3 +9,5 @@ coverage/
 /.render
 /.idea
 /.vscode
+.vercel
+.env*.local
