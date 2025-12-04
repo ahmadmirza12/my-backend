@@ -2,6 +2,7 @@ import { User } from '../models/user.model.js'
 import { signToken } from '../utils/jwt.js'
 import { Otp } from '../models/otp.model.js'
 import { sendOtpMail } from '../services/mailer.js'
+import bcrypt from 'bcryptjs'
 
 function setTokenCookie(res, token) {
   const isProd = process.env.NODE_ENV === 'production'
@@ -62,19 +63,27 @@ export async function login(req, res) {
 export async function adminLogin(req, res) {
   try {
     const { email, password } = req.body || {}
-    const envEmail = process.env.ADMIN_EMAIL
-    const envPass = process.env.ADMIN_PASSWORD
-    if (email !== envEmail) return res.status(401).json({ message: 'Invalid credentials' })
-    const user = await User.findOne({ email: envEmail, role: 'admin' })
-    if (!user) return res.status(401).json({ message: 'Invalid credentials' })
-    const ok = await user.comparePassword(password)
-    if (!ok) return res.status(401).json({ message: 'Invalid credentials' })
-    const token = signToken({ id: user._id, role: user.role })
+    const admin = await User.findOne({ email })
+    if (!admin) {
+      return res.status(400).json({ success: false, message: 'Admin not found' })
+    }
+    if (admin.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Access denied' })
+    }
+    const isMatch = await bcrypt.compare(password, admin.password)
+    if (!isMatch) {
+      return res.status(401).json({ success: false, message: 'Invalid credentials' })
+    }
+    const token = signToken({ id: admin._id, role: admin.role })
     setTokenCookie(res, token)
-    const safe = { id: user._id, name: user.name, email: user.email, role: user.role }
-    return res.status(200).json({ user: safe, token })
+    return res.status(200).json({
+      success: true,
+      message: 'Admin logged in successfully',
+      token,
+      admin: { id: admin._id, email: admin.email, role: admin.role }
+    })
   } catch (e) {
-    return res.status(400).json({ message: 'Invalid data' })
+    return res.status(500).json({ success: false, message: 'Server error' })
   }
 }
 
