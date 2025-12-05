@@ -7,8 +7,7 @@ import productRouter from './routes/product.routes.js';
 import adminRouter from './routes/admin.routes.js';
 import orderRouter from './routes/order.routes.js';
 import paymentsRouter from './routes/payments.routes.js';
-import path from 'path';
-import swaggerUiDist from 'swagger-ui-dist';
+import swaggerUi from 'swagger-ui-express';
 import { openapiSpec } from './docs/openapi.js';
 const spec = {
   ...openapiSpec,
@@ -38,19 +37,9 @@ app.use('/api/v1/products', productRouter);
 app.use('/api/v1/admin', adminRouter);
 app.use('/api/v1/orders', orderRouter);
 app.use('/api/v1/payments', paymentsRouter);
-const swaggerAssetsPath = swaggerUiDist.getAbsoluteFSPath();
-app.use('/docs', express.static(swaggerAssetsPath));
-app.get('/docs/swagger-initializer.js', (req, res) => {
-  const js = `window.onload = function() {\n  const ui = SwaggerUIBundle({\n    url: '/docs.json',\n    dom_id: '#swagger-ui',\n    deepLinking: true,\n    presets: [SwaggerUIBundle.presets.apis, SwaggerUIStandalonePreset],\n    layout: 'StandaloneLayout'\n  });\n  window.ui = ui;\n}`
-  res.type('application/javascript').send(js)
-})
-app.get('/docs.json', (req, res) => {
-  res.type('application/json').send(spec);
-});
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(spec));
 
-app.get('/', (req, res) => {
-  res.json({ message: 'API is running' });
-});
+
 
 app.use((err, req, res, next) => {
    const code = err.status || 500
