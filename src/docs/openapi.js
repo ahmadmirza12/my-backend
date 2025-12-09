@@ -23,6 +23,7 @@ export const openapiSpec = {
           description: { type: "string" },
           price: { type: "number" },
           images: { type: "array", items: { type: "string" } },
+          colors: { type: "array", items: { type: "string" } },
           stock: { type: "number" },
           variants: {
             type: "array",
@@ -31,6 +32,7 @@ export const openapiSpec = {
               properties: {
                 size: { type: "string" },
                 stock: { type: "number" },
+                color: { type: "string" },
               },
             },
           },
@@ -45,6 +47,7 @@ export const openapiSpec = {
           price: { type: "number" },
           quantity: { type: "number" },
           size: { type: "string" },
+          color: { type: "string" },
         },
       },
       Order: {
@@ -272,6 +275,24 @@ export const openapiSpec = {
         security: [{ BearerAuth: [] }],
       },
     },
+    "/api/v1/admin/orders": {
+      delete: {
+        tags: ["Admin"],
+        summary: "Delete all orders",
+        responses: {
+          200: {
+            description: "OK",
+            content: {
+              "application/json": {
+                schema: { type: "object", properties: { deletedCount: { type: "integer" } } },
+                example: { deletedCount: 123 }
+              }
+            }
+          }
+        },
+        security: [{ BearerAuth: [] }]
+      }
+    },
     "/api/v1/admin/products/{id}": {
       put: {
         tags: ["Admin"],
@@ -364,19 +385,20 @@ export const openapiSpec = {
             "application/json": {
               schema: {
                 type: "object",
-                properties: {
+              properties: {
+                items: {
+                  type: "array",
                   items: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        product: { type: "string" },
-                        quantity: { type: "number" },
-                        size: { type: "string" },
-                      },
-                      required: ["product", "quantity"],
+                    type: "object",
+                    properties: {
+                      product: { type: "string" },
+                      quantity: { type: "number" },
+                      size: { type: "string" },
+                      color: { type: "string" },
                     },
+                    required: ["product", "quantity"],
                   },
+                },
                   paymentMethod: { type: "string", enum: ["cod", "card"], default: "cod" },
                   shippingAddress: {
                     type: "object",
@@ -396,7 +418,7 @@ export const openapiSpec = {
               },
               example: {
                 items: [
-                  { product: "69246e3996cfaaad9b16ad4d", quantity: 2 }
+                  { product: "69246e3996cfaaad9b16ad4d", quantity: 2, size: "M", color: "red" }
                 ],
                 paymentMethod: "cod",
                 shippingAddress: {
@@ -429,6 +451,8 @@ export const openapiSpec = {
                         title: "Sample Tee",
                         price: 19.99,
                         quantity: 2,
+                        size: "M",
+                        color: "red",
                       },
                     ],
                     totalAmount: 39.98,

@@ -3,7 +3,8 @@ import mongoose from 'mongoose'
 const VariantSchema = new mongoose.Schema(
   {
     size: { type: String, required: true },
-    stock: { type: Number, required: true, min: 0 }
+    stock: { type: Number, required: true, min: 0 },
+    color: { type: String, required: true }
   },
   { _id: false }
 )
@@ -14,6 +15,7 @@ const ProductSchema = new mongoose.Schema(
     description: { type: String, default: '' },
     price: { type: Number, required: true, min: 0 },
     images: [{ type: String }],
+    colors: [{ type: String }],
     stock: { type: Number, required: true, min: 0 },
     variants: [VariantSchema],
     category: { type: String, index: true },

@@ -2,6 +2,11 @@ import { Order } from '../models/order.model.js'
 import { Product } from '../models/product.model.js'
 import mongoose from 'mongoose'
 
+export async function deleteAllOrders(req, res) {
+  const result = await Order.deleteMany({})
+  return res.status(200).json({ deletedCount: result?.deletedCount || 0 })
+}
+
 export async function createOrder(req, res) {
   const { items = [], paymentMethod = 'cod', shippingAddress } = req.body
   if (!Array.isArray(items) || items.length === 0) return res.status(400).json({ message: 'No items' })
@@ -11,8 +16,9 @@ export async function createOrder(req, res) {
   for (const i of items) {
     const p = map.get(String(i.product))
     if (!p) return res.status(400).json({ message: 'Invalid product' })
-    if (i.size) {
-      const v = (p.variants || []).find(v => v.size === i.size)
+    const wantsVariant = Boolean(i.size) || Boolean(i.color)
+    if (wantsVariant) {
+      const v = (p.variants || []).find(v => (!i.size || v.size === i.size) && (!i.color || v.color === i.color))
       if (!v || v.stock < i.quantity) return res.status(400).json({ message: 'Insufficient stock' })
     } else {
       if (p.stock < i.quantity) return res.status(400).json({ message: 'Insufficient stock' })
@@ -20,7 +26,7 @@ export async function createOrder(req, res) {
   }
   const normalizedItems = items.map(i => {
     const p = map.get(String(i.product))
-    return { product: p._id, title: p.title, price: p.price, quantity: i.quantity, size: i.size }
+    return { product: p._id, title: p.title, price: p.price, quantity: i.quantity, size: i.size, color: i.color }
   })
   const totalAmount = normalizedItems.reduce((sum, i) => sum + i.price * i.quantity, 0)
   const order = await Order.create({ user: req.user._id, items: normalizedItems, totalAmount, paymentMethod, paymentStatus: 'unpaid', status: 'pending', shippingAddress, statusHistory: [{ status: 'pending', at: new Date() }] })
@@ -39,7 +45,7 @@ export async function getOrder(req, res) {
   }).filter(Boolean))).filter(id => mongoose.Types.ObjectId.isValid(id))
   const products = await Product.find({ _id: { $in: ids } }).lean()
   const pmap = new Map(products.map(p => [String(p._id), p]))
-  const base = `${req.protocol}://${req.get('host')}`
+  const base = process.env.PUBLIC_URL || `${req.protocol}://${req.get('host')}`
   const placeholder = process.env.PLACEHOLDER_IMAGE_URL || 'https://via.placeholder.com/300?text=No+Image'
   const toAbs = (u) => {
     if (!u || typeof u !== 'string') return placeholder
@@ -60,15 +66,18 @@ export async function getOrder(req, res) {
     products: (order.items || []).map(i => {
       const pr = (i.product && typeof i.product === 'object') ? i.product : pmap.get(String(i.product))
       const images = pr?.images || []
+      if (!images || images.length === 0) {
+        console.warn('order_images_missing', { orderId: String(order._id), productId: pr?._id ? String(pr._id) : String(i.product) })
+      }
       return {
         product_id: (i.product && typeof i.product === 'object') ? String(i.product._id) : String(i.product),
         name: pr?.title || i.title,
         price: i.price,
         quantity: i.quantity,
         size: i.size,
+        color: i.color,
         image_url: toAbs(images[0]),
-        image_urls: images.map(toAbs),
-        image_error: images.length === 0 ? 'not_found' : null
+        image_urls: (images && images.length > 0) ? images.map(toAbs) : [placeholder]
       }
     }),
     timeline,
@@ -91,7 +100,7 @@ export async function listMyOrders(req, res) {
   })).filter(Boolean))).filter(id => mongoose.Types.ObjectId.isValid(id))
   const products = await Product.find({ _id: { $in: ids } }).lean()
   const pmap = new Map(products.map(p => [String(p._id), p]))
-  const base = `${req.protocol}://${req.get('host')}`
+  const base = process.env.PUBLIC_URL || `${req.protocol}://${req.get('host')}`
   const placeholder = process.env.PLACEHOLDER_IMAGE_URL || 'https://via.placeholder.com/300?text=No+Image'
   const toAbs = (u) => {
     if (!u || typeof u !== 'string') return placeholder
@@ -112,17 +121,21 @@ export async function listMyOrders(req, res) {
     payment: { method: o.paymentMethod, status: o.paymentStatus },
     shipping: { ...o.shippingAddress, estimatedDeliveryDate: o.estimatedDeliveryDate },
     products: (o.items || []).map(i => {
-      const pr = (i.product && typeof i.product === 'object') ? i.product : pmap.get(String(i.product))
+      const pid = (i.product && typeof i.product === 'object' && i.product._id) ? String(i.product._id) : String(i.product)
+      const pr = pmap.get(pid) || (typeof i.product === 'object' ? i.product : null)
       const images = pr?.images || []
+      if (!images || images.length === 0) {
+        console.warn('order_images_missing', { orderId: String(o._id), productId: pid })
+      }
       return {
-        product_id: (i.product && typeof i.product === 'object') ? String(i.product._id) : String(i.product),
+        product_id: pid,
         name: pr?.title || i.title,
         price: i.price,
         quantity: i.quantity,
         size: i.size,
+        color: i.color,
         image_url: toAbs(images[0]),
-        image_urls: images.map(toAbs),
-        image_error: images.length === 0 ? 'not_found' : null
+        image_urls: (images && images.length > 0) ? images.map(toAbs) : [placeholder]
       }
     }),
     timeline: timeline(o),
@@ -143,7 +156,7 @@ export async function listMyOrdersFull(req, res) {
   })).filter(Boolean))).filter(id => mongoose.Types.ObjectId.isValid(id))
   const products = await Product.find({ _id: { $in: ids } }).lean()
   const pmap = new Map(products.map(p => [String(p._id), p]))
-  const base = `${req.protocol}://${req.get('host')}`
+  const base = process.env.PUBLIC_URL || `${req.protocol}://${req.get('host')}`
   const toAbs = (u) => {
     if (!u) return null
     if (u.startsWith('http://') || u.startsWith('https://')) return u
@@ -183,7 +196,7 @@ export async function listOrders(req, res) {
   })).filter(Boolean))).filter(id => mongoose.Types.ObjectId.isValid(id))
   const products = await Product.find({ _id: { $in: ids } }).lean()
   const pmap = new Map(products.map(p => [String(p._id), p]))
-  const base = `${req.protocol}://${req.get('host')}`
+  const base = process.env.PUBLIC_URL || `${req.protocol}://${req.get('host')}`
   const placeholder = process.env.PLACEHOLDER_IMAGE_URL || 'https://via.placeholder.com/300?text=No+Image'
   const toAbs = (u) => {
     if (!u || typeof u !== 'string') return placeholder
@@ -207,15 +220,18 @@ export async function listOrders(req, res) {
     products: (o.items || []).map(i => {
       const pr = (i.product && typeof i.product === 'object') ? i.product : pmap.get(String(i.product))
       const images = pr?.images || []
+      if (!images || images.length === 0) {
+        console.warn('order_images_missing', { orderId: String(o._id), productId: pr?._id ? String(pr._id) : String(i.product) })
+      }
       return {
         product_id: (i.product && typeof i.product === 'object') ? String(i.product._id) : String(i.product),
         name: pr?.title || i.title,
         price: i.price,
         quantity: i.quantity,
         size: i.size,
+        color: i.color,
         image_url: toAbs(images[0]),
-        image_urls: images.map(toAbs),
-        image_error: images.length === 0 ? 'not_found' : null
+        image_urls: (images && images.length > 0) ? images.map(toAbs) : [placeholder]
       }
     }),
     timeline: timeline(o),
@@ -234,8 +250,9 @@ export async function acceptOrder(req, res) {
   for (const i of order.items) {
     const p = await Product.findById(i.product)
     if (!p) return res.status(400).json({ message: 'Invalid product' })
-    if (i.size) {
-      const idx = (p.variants || []).findIndex(v => v.size === i.size)
+    const wantsVariant = Boolean(i.size) || Boolean(i.color)
+    if (wantsVariant) {
+      const idx = (p.variants || []).findIndex(v => (!i.size || v.size === i.size) && (!i.color || v.color === i.color))
       if (idx === -1 || p.variants[idx].stock < i.quantity) return res.status(400).json({ message: 'Insufficient stock' })
       p.variants[idx].stock -= i.quantity
     } else {

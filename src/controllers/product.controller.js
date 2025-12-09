@@ -23,6 +23,16 @@ export async function getProduct(req, res) {
 
 export async function createProduct(req, res) {
   const payload = { ...req.body, createdBy: req.user?._id }
+  let colors = []
+  const incoming = payload.colors
+  if (Array.isArray(incoming)) {
+    colors = incoming
+  } else if (typeof incoming === 'string') {
+    colors = incoming.split(',').map(s => s.trim()).filter(Boolean)
+  } else if (Array.isArray(payload.variants)) {
+    colors = payload.variants.map(v => v?.color).filter(Boolean)
+  }
+  payload.colors = Array.from(new Set(colors))
   const item = await Product.create(payload)
   return res.status(201).json({ item })
 }
