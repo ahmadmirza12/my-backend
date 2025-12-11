@@ -293,6 +293,37 @@ export const openapiSpec = {
         security: [{ BearerAuth: [] }]
       }
     },
+    "/api/v1/admin/image-metrics": {
+      get: {
+        tags: ["Admin"],
+        summary: "Get image display metrics",
+        responses: {
+          200: {
+            description: "OK",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    metrics: {
+                      type: "object",
+                      properties: {
+                        requests: { type: "integer" },
+                        placeholdersUsed: { type: "integer" },
+                        validationFailures: { type: "integer" },
+                        cacheHits: { type: "integer" },
+                      }
+                    }
+                  }
+                },
+                example: { metrics: { requests: 1200, placeholdersUsed: 75, validationFailures: 30, cacheHits: 220 } }
+              }
+            }
+          }
+        },
+        security: [{ BearerAuth: [] }]
+      }
+    },
     "/api/v1/admin/products/{id}": {
       put: {
         tags: ["Admin"],

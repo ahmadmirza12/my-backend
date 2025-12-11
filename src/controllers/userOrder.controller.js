@@ -23,11 +23,14 @@ export async function listMyOrders(req, res) {
   const products = await Product.find({ _id: { $in: ids } }).lean()
   const pmap = new Map(products.map(p => [String(p._id), p]))
   const base = process.env.PUBLIC_URL || `${req.protocol}://${req.get('host')}`
-  const placeholder = process.env.PLACEHOLDER_IMAGE_URL || 'https://via.placeholder.com/300?text=No+Image'
+  const placeholder = process.env.PLACEHOLDER_IMAGE_URL || 'https://demofree.sirv.com/nope-not-here.jpg'
   const toAbs = (u) => {
     if (!u || typeof u !== 'string') return placeholder
     if (u.startsWith('http://') || u.startsWith('https://')) return u
-    return `${base}${u.startsWith('/') ? u : `/uploads/${u}`}`
+    // Handle production deployment URLs properly
+    const cleanBase = base.replace(/\/$/, '') // Remove trailing slash if present
+    const cleanPath = u.startsWith('/') ? u : `/uploads/${u}`
+    return `${cleanBase}${cleanPath}`
   }
   const normalizeOrder = (o) => ({
     id: String(o._id),
@@ -72,11 +75,14 @@ export async function getMyOrder(req, res) {
   const products = await Product.find({ _id: { $in: ids } }).lean()
   const pmap = new Map(products.map(p => [String(p._id), p]))
   const base = process.env.PUBLIC_URL || `${req.protocol}://${req.get('host')}`
-  const placeholder = process.env.PLACEHOLDER_IMAGE_URL || 'https://via.placeholder.com/300?text=No+Image'
+  const placeholder = process.env.PLACEHOLDER_IMAGE_URL || 'https://demofree.sirv.com/nope-not-here.jpg'
   const toAbs = (u) => {
     if (!u || typeof u !== 'string') return placeholder
     if (u.startsWith('http://') || u.startsWith('https://')) return u
-    return `${base}${u.startsWith('/') ? u : `/uploads/${u}`}`
+    // Handle production deployment URLs properly
+    const cleanBase = base.replace(/\/$/, '') // Remove trailing slash if present
+    const cleanPath = u.startsWith('/') ? u : `/uploads/${u}`
+    return `${cleanBase}${cleanPath}`
   }
   const normalized = {
     id: String(order._id),

@@ -55,8 +55,9 @@ export async function addProductImages(req, res) {
   const { id } = req.params
   const files = req.files || []
   const paths = files.map(f => `/uploads/${f.filename}`)
-  const base = `${req.protocol}://${req.get('host')}`
-  const urls = paths.map(p => `${base}${p}`)
+  const base = process.env.PUBLIC_URL || `${req.protocol}://${req.get('host')}`
+  const cleanBase = base.replace(/\/$/, '') // Remove trailing slash if present
+  const urls = paths.map(p => `${cleanBase}${p}`)
   if (!id) {
     return res.status(200).json({ urls })
   }
