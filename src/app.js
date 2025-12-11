@@ -39,9 +39,7 @@ app.use('/api/v1/orders', orderRouter);
 app.use('/api/v1/payments', paymentsRouter);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(spec));
 
-app.get('/', (req, res) => {
-  res.json({ message: 'API is running' });
-});
+
 
 app.use((err, req, res, next) => {
    const code = err.status || 500

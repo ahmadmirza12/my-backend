@@ -7,7 +7,8 @@
     "start": "node -r dotenv/config dist/server.cjs",
     "dev": "nodemon -r dotenv/config src/server.js",
     "build": "esbuild src/server.js --bundle --platform=node --format=cjs --external:bcrypt --outfile=dist/server.cjs",
-    "postinstall": "npm run build"
+    "postinstall": "npm run build",
+    "test:images": "node -r dotenv/config src/utils/images.test.js"
   },
   "author": "",
   "license": "ISC",

@@ -42,6 +42,7 @@ export async function listOrders(req, res) {
         price: i.price,
         quantity: i.quantity,
         size: i.size,
+        color: i.color,
         details: pr || null
       }
     }),
@@ -76,6 +77,7 @@ export async function getOrder(req, res) {
         price: i.price,
         quantity: i.quantity,
         size: i.size,
+        color: i.color,
         details: pr || null
       }
     }),
@@ -87,3 +89,8 @@ export async function getOrder(req, res) {
 }
 
 export { requireAdmin }
+
+export async function deleteAllOrders(req, res) {
+  const result = await Order.deleteMany({})
+  return res.status(200).json({ deletedCount: result?.deletedCount || 0 })
+}

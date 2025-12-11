@@ -5,11 +5,12 @@ import { requireAdmin, requireAuth, requireUser } from '../middlewares/auth.js'
 const router = Router()
 
 router.post('/', requireAuth, requireUser, createOrder)
+// router.post('/', createOrder)
 router.get('/my', requireAuth, requireUser, listMyOrders)
 router.get('/my/full', requireAuth, requireUser, listMyOrdersFull)
 router.get('/:id', requireAuth, getOrder)
 
-router.get('/', requireAuth, requireAdmin, listOrders)
+router.get('/', listOrders)
 router.put('/:id/accept', requireAuth, requireAdmin, acceptOrder)
 router.put('/:id/reject', requireAuth, requireAdmin, rejectOrder)
 

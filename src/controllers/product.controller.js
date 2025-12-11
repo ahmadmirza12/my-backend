@@ -23,6 +23,16 @@ export async function getProduct(req, res) {
 
 export async function createProduct(req, res) {
   const payload = { ...req.body, createdBy: req.user?._id }
+  let colors = []
+  const incoming = payload.colors
+  if (Array.isArray(incoming)) {
+    colors = incoming
+  } else if (typeof incoming === 'string') {
+    colors = incoming.split(',').map(s => s.trim()).filter(Boolean)
+  } else if (Array.isArray(payload.variants)) {
+    colors = payload.variants.map(v => v?.color).filter(Boolean)
+  }
+  payload.colors = Array.from(new Set(colors))
   const item = await Product.create(payload)
   return res.status(201).json({ item })
 }
@@ -45,8 +55,9 @@ export async function addProductImages(req, res) {
   const { id } = req.params
   const files = req.files || []
   const paths = files.map(f => `/uploads/${f.filename}`)
-  const base = `${req.protocol}://${req.get('host')}`
-  const urls = paths.map(p => `${base}${p}`)
+  const base = process.env.PUBLIC_URL || `${req.protocol}://${req.get('host')}`
+  const cleanBase = base.replace(/\/$/, '') // Remove trailing slash if present
+  const urls = paths.map(p => `${cleanBase}${p}`)
   if (!id) {
     return res.status(200).json({ urls })
   }

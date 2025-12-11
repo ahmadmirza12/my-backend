@@ -22,6 +22,16 @@ export async function listMyOrders(req, res) {
   const ids = Array.from(new Set(raw.flatMap(o => (o.items || []).map(i => String(i.product)))))
   const products = await Product.find({ _id: { $in: ids } }).lean()
   const pmap = new Map(products.map(p => [String(p._id), p]))
+  const base = process.env.PUBLIC_URL || `${req.protocol}://${req.get('host')}`
+  const placeholder = process.env.PLACEHOLDER_IMAGE_URL || 'https://demofree.sirv.com/nope-not-here.jpg'
+  const toAbs = (u) => {
+    if (!u || typeof u !== 'string') return placeholder
+    if (u.startsWith('http://') || u.startsWith('https://')) return u
+    // Handle production deployment URLs properly
+    const cleanBase = base.replace(/\/$/, '') // Remove trailing slash if present
+    const cleanPath = u.startsWith('/') ? u : `/uploads/${u}`
+    return `${cleanBase}${cleanPath}`
+  }
   const normalizeOrder = (o) => ({
     id: String(o._id),
     date: o.createdAt,
@@ -30,13 +40,21 @@ export async function listMyOrders(req, res) {
     payment: { method: o.paymentMethod, status: o.paymentStatus },
     shipping: { ...o.shippingAddress, estimatedDeliveryDate: o.estimatedDeliveryDate },
     products: (o.items || []).map(i => {
-      const pr = pmap.get(String(i.product))
+      const pid = String(i.product)
+      const pr = pmap.get(pid)
+      const images = pr?.images || []
+      if (!images || images.length === 0) {
+        console.warn('user_order_images_missing', { orderId: String(o._id), productId: pid })
+      }
       return {
-        product_id: String(i.product),
+        product_id: pid,
         name: pr?.title || i.title,
         price: i.price,
         quantity: i.quantity,
         size: i.size,
+        color: i.color,
+        image_url: toAbs(images[0]),
+        image_urls: (images && images.length > 0) ? images.map(toAbs) : [placeholder],
         details: pr || null
       }
     }),
@@ -56,6 +74,16 @@ export async function getMyOrder(req, res) {
   const ids = Array.from(new Set((order.items || []).map(i => String(i.product))))
   const products = await Product.find({ _id: { $in: ids } }).lean()
   const pmap = new Map(products.map(p => [String(p._id), p]))
+  const base = process.env.PUBLIC_URL || `${req.protocol}://${req.get('host')}`
+  const placeholder = process.env.PLACEHOLDER_IMAGE_URL || 'https://demofree.sirv.com/nope-not-here.jpg'
+  const toAbs = (u) => {
+    if (!u || typeof u !== 'string') return placeholder
+    if (u.startsWith('http://') || u.startsWith('https://')) return u
+    // Handle production deployment URLs properly
+    const cleanBase = base.replace(/\/$/, '') // Remove trailing slash if present
+    const cleanPath = u.startsWith('/') ? u : `/uploads/${u}`
+    return `${cleanBase}${cleanPath}`
+  }
   const normalized = {
     id: String(order._id),
     date: order.createdAt,
@@ -64,13 +92,21 @@ export async function getMyOrder(req, res) {
     payment: { method: order.paymentMethod, status: order.paymentStatus },
     shipping: { ...order.shippingAddress, estimatedDeliveryDate: order.estimatedDeliveryDate },
     products: (order.items || []).map(i => {
-      const pr = pmap.get(String(i.product))
+      const pid = String(i.product)
+      const pr = pmap.get(pid)
+      const images = pr?.images || []
+      if (!images || images.length === 0) {
+        console.warn('user_order_images_missing', { orderId: String(order._id), productId: pid })
+      }
       return {
-        product_id: String(i.product),
+        product_id: pid,
         name: pr?.title || i.title,
         price: i.price,
         quantity: i.quantity,
         size: i.size,
+        color: i.color,
+        image_url: toAbs(images[0]),
+        image_urls: (images && images.length > 0) ? images.map(toAbs) : [placeholder],
         details: pr || null
       }
     }),
