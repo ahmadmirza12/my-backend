@@ -73,6 +73,7 @@ export async function getOrder(req, res) {
       const pr = pmap.get(String(i.product))
       return {
         product_id: String(i.product),
+        
         name: pr?.title || i.title,
         price: i.price,
         quantity: i.quantity,
@@ -84,6 +85,7 @@ export async function getOrder(req, res) {
     timeline: Array.isArray(order.statusHistory) ? order.statusHistory : [],
     tracking: order.tracking || null,
     notes: order.notes || ''
+    
   }
   return res.status(200).json({ item: normalized })
 }
