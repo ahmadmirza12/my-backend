@@ -6,9 +6,11 @@
   "scripts": {
     "start": "node -r dotenv/config dist/server.cjs",
     "dev": "nodemon -r dotenv/config src/server.js",
-    "build": "esbuild src/server.js --bundle --platform=node --format=cjs --external:bcrypt --outfile=dist/server.cjs",
+    "build": "esbuild src/server.js --bundle --platform=node --format=cjs --external:bcrypt --external:swagger-ui-express --external:swagger-ui-dist --outfile=dist/server.cjs",
+    "prestart": "npm run build",
     "postinstall": "npm run build",
-    "test:images": "node -r dotenv/config src/utils/images.test.js"
+    "test:images": "node -r dotenv/config src/utils/images.test.js",
+    "test:cloudinary": "node -r dotenv/config src/tests/cloudinary_upload.test.js"
   },
   "author": "",
   "license": "ISC",
@@ -34,6 +36,7 @@
     "prettier": "^3.6.2",
     "stripe": "^20.0.0",
     "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-express": "^5.0.1"
+    "swagger-ui-express": "^5.0.1",
+    "cloudinary": "^1.41.0"
   }
 }

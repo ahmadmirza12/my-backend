@@ -1,4 +1,5 @@
 import { Product } from '../models/product.model.js'
+import { v2 as cloudinary } from 'cloudinary'
 
 export async function listProducts(req, res) {
   const { page = 1, limit = 20, q, category, minPrice, maxPrice } = req.query
@@ -54,14 +55,68 @@ export async function deleteProduct(req, res) {
 export async function addProductImages(req, res) {
   const { id } = req.params
   const files = req.files || []
-  const paths = files.map(f => `/uploads/${f.filename}`)
-  const base = process.env.PUBLIC_URL || `${req.protocol}://${req.get('host')}`
-  const cleanBase = base.replace(/\/$/, '') // Remove trailing slash if present
-  const urls = paths.map(p => `${cleanBase}${p}`)
-  if (!id) {
-    return res.status(200).json({ urls })
+  if (!files || files.length === 0) {
+    return res.status(400).json({ message: 'No files uploaded. Use multipart/form-data with field name "images".' })
   }
-  const item = await Product.findByIdAndUpdate(id, { $push: { images: { $each: urls } } }, { new: true })
-  if (!item) return res.status(404).json({ message: 'Not found' })
-  return res.status(200).json({ item })
+  const allowed = ['image/jpeg','image/png','image/gif']
+  if (files.some(f => f.mimetype && !allowed.includes(f.mimetype))) {
+    return res.status(400).json({ message: 'Invalid file type. Allowed: JPEG, PNG, GIF' })
+  }
+  const hasUrl = Boolean(process.env.CLOUDINARY_URL)
+  const hasCreds = Boolean(process.env.CLOUDINARY_CLOUD_NAME) && Boolean(process.env.CLOUDINARY_API_KEY) && Boolean(process.env.CLOUDINARY_API_SECRET)
+  const useUnsigned = Boolean(process.env.CLOUDINARY_UPLOAD_PRESET)
+  if (!hasUrl && !hasCreds && !useUnsigned) {
+    return res.status(400).json({ message: 'Cloudinary not configured. Provide CLOUDINARY_URL or CLOUDINARY_CLOUD_NAME + API KEY/SECRET or CLOUDINARY_UPLOAD_PRESET.' })
+  }
+  if (hasUrl) {
+    cloudinary.config({ secure: true })
+  } else if (hasCreds) {
+    cloudinary.config({ cloud_name: process.env.CLOUDINARY_CLOUD_NAME, api_key: process.env.CLOUDINARY_API_KEY, api_secret: process.env.CLOUDINARY_API_SECRET, secure: true })
+  } else {
+    cloudinary.config({ cloud_name: process.env.CLOUDINARY_CLOUD_NAME, secure: true })
+  }
+  let urls = []
+  try {
+    const uploaded = await Promise.all(files.map(async (f) => {
+      const commonOpts = useUnsigned ? { folder: 'products', upload_preset: process.env.CLOUDINARY_UPLOAD_PRESET } : { folder: 'products' }
+      if (f.buffer && f.buffer.length > 0) {
+        return await new Promise((resolve, reject) => {
+          const stream = cloudinary.uploader.upload_stream(commonOpts, (err, result) => {
+            if (err) return reject(err)
+            const meta = {
+              url: result?.secure_url || result?.url,
+              public_id: result?.public_id,
+              width: result?.width,
+              height: result?.height,
+              format: result?.format,
+              resource_type: result?.resource_type
+            }
+            resolve(meta)
+          })
+          stream.end(f.buffer)
+        })
+      }
+      if (f.path) {
+        const result = await cloudinary.uploader.upload(f.path, commonOpts)
+        return {
+          url: result?.secure_url || result?.url,
+          public_id: result?.public_id,
+          width: result?.width,
+          height: result?.height,
+          format: result?.format,
+          resource_type: result?.resource_type
+        }
+      }
+      throw new Error('No file buffer or path provided')
+    }))
+    urls = uploaded.map(u => u.url)
+    if (!id) {
+      return res.status(200).json({ urls, files: uploaded })
+    }
+    const item = await Product.findByIdAndUpdate(id, { $push: { images: { $each: urls } } }, { new: true })
+    if (!item) return res.status(404).json({ message: 'Not found' })
+    return res.status(200).json({ item, uploaded: uploaded })
+  } catch (e) {
+    return res.status(500).json({ message: 'Cloudinary upload failed', error: e?.message || String(e) })
+  }
 }
