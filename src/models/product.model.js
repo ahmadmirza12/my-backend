@@ -25,4 +25,14 @@ const ProductSchema = new mongoose.Schema(
   { timestamps: true }
 )
 
+ProductSchema.virtual('banners', {
+  ref: 'Banner',
+  localField: 'category',
+  foreignField: 'productCategory',
+  justOne: false
+})
+
+ProductSchema.set('toObject', { virtuals: true })
+ProductSchema.set('toJSON', { virtuals: true })
+
 export const Product = mongoose.model('Product', ProductSchema)

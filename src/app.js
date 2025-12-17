@@ -7,6 +7,7 @@ import productRouter from './routes/product.routes.js';
 import adminRouter from './routes/admin.routes.js';
 import orderRouter from './routes/order.routes.js';
 import paymentsRouter from './routes/payments.routes.js';
+import bannerRouter from './routes/banner.routes.js';
 import swaggerUi from 'swagger-ui-express';
 import { openapiSpec } from './docs/openapi.js';
 const spec = {
@@ -19,7 +20,8 @@ const spec = {
 const app = express();
 
 app.use('/api/v1/payments', paymentsWebhookRouter);
-app.use(express.json({ limit: '16kb' }));
+const bodyLimit = process.env.MAX_BODY_SIZE || '10mb'
+app.use(express.json({ limit: bodyLimit }));
 app.use(
    cors({
       origin: process.env.CORS_ORIGIN,
@@ -28,7 +30,7 @@ app.use(
 );
 app.use(express.static('public'));
 app.use(cookieParser());
-app.use(express.urlencoded({ limit: '16kb', extended: true }));
+app.use(express.urlencoded({ limit: bodyLimit, extended: true }));
 
 //routes
 
@@ -41,6 +43,10 @@ app.use('/api/v1/products', productRouter);
 app.use('/api/v1/admin', adminRouter);
 app.use('/api/v1/orders', orderRouter);
 app.use('/api/v1/payments', paymentsRouter);
+// Mounted at /api/v1/banners for standard REST
+app.use('/api/v1/banners', bannerRouter); 
+// Also mounted at /api/v1/user/products/banners for legacy support
+app.use('/api/v1/user/products/banners', bannerRouter); 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(spec));
 
 

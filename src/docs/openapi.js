@@ -8,6 +8,7 @@ export const openapiSpec = {
     { name: "Admin" },
     { name: "Orders" },
     { name: "Payments" },
+    { name: "Banners" },
     { name: "Webhooks" },
   ],
   components: {
@@ -39,6 +40,20 @@ export const openapiSpec = {
           category: { type: "string" },
         },
       },
+      Banner: {
+        type: "object",
+        properties: {
+          _id: { type: "string" },
+          productCategory: { type: "string" },
+          bannerImage: { type: "string" },
+          title: { type: "string" },
+          isActive: { type: "boolean" },
+          startDate: { type: "string", format: "date-time" },
+          endDate: { type: "string", format: "date-time" },
+          createdAt: { type: "string", format: "date-time" },
+          updatedAt: { type: "string", format: "date-time" },
+        },
+      },
       OrderItem: {
         type: "object",
         properties: {
@@ -55,11 +70,27 @@ export const openapiSpec = {
         properties: {
           _id: { type: "string" },
           user: { oneOf: [{ type: "string" }, { type: "object" }] },
-          items: { type: "array", items: { $ref: "#/components/schemas/OrderItem" } },
+          items: {
+            type: "array",
+            items: { $ref: "#/components/schemas/OrderItem" },
+          },
           totalAmount: { type: "number" },
           paymentMethod: { type: "string", enum: ["cod", "card"] },
-          paymentStatus: { type: "string", enum: ["unpaid", "paid", "refunded"] },
-          status: { type: "string", enum: ["pending", "accepted", "rejected", "shipped", "delivered", "cancelled"] },
+          paymentStatus: {
+            type: "string",
+            enum: ["unpaid", "paid", "refunded"],
+          },
+          status: {
+            type: "string",
+            enum: [
+              "pending",
+              "accepted",
+              "rejected",
+              "shipped",
+              "delivered",
+              "cancelled",
+            ],
+          },
           shippingAddress: {
             type: "object",
             properties: {
@@ -163,7 +194,7 @@ export const openapiSpec = {
         tags: ["Auth"],
         summary: "Logout",
         responses: { 200: { description: "OK" } },
-        security: [{ BearerAuth: [] }],
+        security: [],
       },
     },
     "/api/v1/auth/otp/send": {
@@ -284,14 +315,17 @@ export const openapiSpec = {
             description: "OK",
             content: {
               "application/json": {
-                schema: { type: "object", properties: { deletedCount: { type: "integer" } } },
-                example: { deletedCount: 123 }
-              }
-            }
-          }
+                schema: {
+                  type: "object",
+                  properties: { deletedCount: { type: "integer" } },
+                },
+                example: { deletedCount: 123 },
+              },
+            },
+          },
         },
-        security: [{ BearerAuth: [] }]
-      }
+        security: [{ BearerAuth: [] }],
+      },
     },
     "/api/v1/admin/image-metrics": {
       get: {
@@ -312,17 +346,24 @@ export const openapiSpec = {
                         placeholdersUsed: { type: "integer" },
                         validationFailures: { type: "integer" },
                         cacheHits: { type: "integer" },
-                      }
-                    }
-                  }
+                      },
+                    },
+                  },
                 },
-                example: { metrics: { requests: 1200, placeholdersUsed: 75, validationFailures: 30, cacheHits: 220 } }
-              }
-            }
-          }
+                example: {
+                  metrics: {
+                    requests: 1200,
+                    placeholdersUsed: 75,
+                    validationFailures: 30,
+                    cacheHits: 220,
+                  },
+                },
+              },
+            },
+          },
         },
-        security: [{ BearerAuth: [] }]
-      }
+        security: [{ BearerAuth: [] }],
+      },
     },
     "/api/v1/admin/products/{id}": {
       put: {
@@ -396,7 +437,10 @@ export const openapiSpec = {
                 schema: {
                   type: "object",
                   properties: {
-                    urls: { type: "array", items: { type: "string", format: "uri" } },
+                    urls: {
+                      type: "array",
+                      items: { type: "string", format: "uri" },
+                    },
                   },
                 },
               },
@@ -416,21 +460,25 @@ export const openapiSpec = {
             "application/json": {
               schema: {
                 type: "object",
-              properties: {
-                items: {
-                  type: "array",
+                properties: {
                   items: {
-                    type: "object",
-                    properties: {
-                      product: { type: "string" },
-                      quantity: { type: "number" },
-                      size: { type: "string" },
-                      color: { type: "string" },
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        product: { type: "string" },
+                        quantity: { type: "number" },
+                        size: { type: "string" },
+                        color: { type: "string" },
+                      },
+                      required: ["product", "quantity"],
                     },
-                    required: ["product", "quantity"],
                   },
-                },
-                  paymentMethod: { type: "string", enum: ["cod", "card"], default: "cod" },
+                  paymentMethod: {
+                    type: "string",
+                    enum: ["cod", "card"],
+                    default: "cod",
+                  },
                   shippingAddress: {
                     type: "object",
                     properties: {
@@ -449,7 +497,12 @@ export const openapiSpec = {
               },
               example: {
                 items: [
-                  { product: "69246e3996cfaaad9b16ad4d", quantity: 2, size: "M", color: "red" }
+                  {
+                    product: "69246e3996cfaaad9b16ad4d",
+                    quantity: 2,
+                    size: "M",
+                    color: "red",
+                  },
                 ],
                 paymentMethod: "cod",
                 shippingAddress: {
@@ -668,6 +721,136 @@ export const openapiSpec = {
         tags: ["Webhooks"],
         summary: "Stripe webhook",
         responses: { 200: { description: "OK" } },
+      },
+    },
+    "/api/v1/banners": {
+      post: {
+        tags: ["Banners"],
+        summary: "Create banner",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  productCategory: { type: "string" },
+                  bannerImage: { type: "string", format: "uri" },
+                },
+                required: ["productCategory", "bannerImage"],
+              },
+            },
+          },
+        },
+        responses: {
+          201: {
+            description: "Created",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: { item: { $ref: "#/components/schemas/Banner" } },
+                },
+              },
+            },
+          },
+          400: { description: "Invalid payload" },
+        },
+        security: [{ BearerAuth: [] }],
+      },
+    },
+    "/api/v1/banners/{id}": {
+      put: {
+        tags: ["Banners"],
+        summary: "Update banner",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  productCategory: { type: "string" },
+                  bannerImage: { type: "string", format: "uri" },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "OK",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: { item: { $ref: "#/components/schemas/Banner" } },
+                },
+              },
+            },
+          },
+          404: { description: "Not found" },
+          400: { description: "Invalid payload" },
+        },
+        security: [{ BearerAuth: [] }],
+      },
+      delete: {
+        tags: ["Banners"],
+        summary: "Delete banner",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+          },
+        ],
+        responses: {
+          200: { description: "Deleted" },
+          404: { description: "Not found" },
+        },
+        security: [{ BearerAuth: [] }],
+      },
+    },
+    "/api/v1/user/products/banners": {
+      get: {
+        tags: ["Banners"],
+        summary: "List user product banners",
+        parameters: [
+          { name: "category", in: "query", schema: { type: "string" } },
+          { name: "limit", in: "query", schema: { type: "integer" } },
+          { name: "offset", in: "query", schema: { type: "integer" } },
+        ],
+        responses: {
+          200: {
+            description: "OK",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    items: {
+                      type: "array",
+                      items: { $ref: "#/components/schemas/Banner" },
+                    },
+                    total: { type: "integer" },
+                    limit: { type: "integer" },
+                    offset: { type: "integer" },
+                  },
+                },
+              },
+            },
+          },
+        },
+        security: [],
       },
     },
   },

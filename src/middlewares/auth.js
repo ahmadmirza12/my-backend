@@ -40,3 +40,24 @@ export function requireUser(req, res, next) {
   }
   next()
 }
+
+export async function optionalAuth(req, res, next) {
+  try {
+    const header = req.headers.authorization || ''
+    const bearer = header.startsWith('Bearer ') ? header.slice(7) : null
+    const cookieToken = req.cookies?.token
+    const token = bearer || cookieToken
+    if (!token) return next() // No token, proceed as guest
+
+    const decoded = verifyToken(token)
+    const user = await User.findById(decoded.id).select('-password')
+    if (user) {
+      req.user = user
+    }
+    next()
+  } catch (e) {
+    // If token is invalid, we just proceed as guest (or we could warn)
+    // For now, let's just proceed without user
+    next()
+  }
+}

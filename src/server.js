@@ -2,6 +2,7 @@ import { connectDB } from './db/db.js';
 import { app } from './app.js';
 import dotenv from "dotenv"
 import { ensureDefaultAdmin } from './bootstrap/seed.js'
+import { ensureBannerIndexes } from './bootstrap/migrations.js'
 
 dotenv.config({
     path:"./.env"
@@ -18,6 +19,7 @@ connectDB()
 .then(async (ok) => {
     if (ok) {
         await ensureDefaultAdmin()
+        await ensureBannerIndexes()
     }
 })
 .catch((err) => {

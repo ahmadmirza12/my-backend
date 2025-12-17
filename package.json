@@ -10,7 +10,8 @@
     "prestart": "npm run build",
     "postinstall": "npm run build",
     "test:images": "node -r dotenv/config src/utils/images.test.js",
-    "test:cloudinary": "node -r dotenv/config src/tests/cloudinary_upload.test.js"
+    "test:cloudinary": "node -r dotenv/config src/tests/cloudinary_upload.test.js",
+    "test:banners": "node -r dotenv/config src/tests/banner.tests.js"
   },
   "author": "",
   "license": "ISC",
