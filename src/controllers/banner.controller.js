@@ -1,6 +1,8 @@
 import { Banner } from '../models/banner.model.js'
 import { Product } from '../models/product.model.js'
 import { Order } from '../models/order.model.js'
+import express from 'express';
+const router = express.Router();
 
 // productCategory validation removed: any non-empty string is accepted
 
@@ -113,53 +115,60 @@ export async function deleteBanner(req, res) {
   if (!item) return res.status(404).json({ message: 'Not found' })
   return res.status(200).json({ message: 'Deleted' })
 }
+
+export async function getAllBanners(req, res) {
+  try {
+    const banners = await Banner.find({});
+    return res.status(200).json({ success: true, count: banners.length, data: banners });
+  } catch (error) {
+    console.error('Error fetching banners:', error);
+    return res.status(500).json({ success: false, message: 'Error fetching banners', error: error.message });
+  }
+}
+
 export async function listUserProductBanners(req, res) {
   try {
-    const { category, limit = 20, offset = 0 } = req.query || {}
-    const now = new Date()
-    const activeFilter = buildActiveDateFilter(now)
-  
-    let filter = { ...activeFilter }
-    let categories = []
+    const { category, limit = 20, offset = 0 } = req.query || {};
+    const now = new Date();
+    const activeFilter = buildActiveDateFilter(now);
+
+    // Base filter for active banners
+    let filter = { ...activeFilter };
+
+    // If specific category is requested, use it
     if (category) {
-      categories = [String(category).trim()]
-    } else if (req.user && req.user._id) {
-      const orders = await Order.find({ user: req.user._id }).lean()
-      const productIds = Array.from(new Set(orders.flatMap(o => (o.items || []).map(i => String(i.product)))))
-      if (productIds.length > 0) {
-        const products = await Product.find({ _id: { $in: productIds } }).select('category').lean()
-        categories = Array.from(new Set(products.map(p => p.category).filter(Boolean)))
-      }
-    } else {
-      categories = []
+      filter.productCategory = String(category).trim();
     }
-  
-    if (categories.length > 0) {
-      filter.productCategory = { $in: categories }
-    }
-  
-    const total = await Banner.countDocuments(filter)
+
+    const total = await Banner.countDocuments(filter);
     const items = await Banner.find(filter)
       .sort({ createdAt: -1 })
       .skip(Number(offset))
       .limit(Number(limit))
-      .lean()
-  
+      .lean();
+
     const enriched = await Promise.all(items.map(async (b) => {
-      const count = await Product.countDocuments({ category: b.productCategory })
+      const count = b.productCategory 
+        ? await Product.countDocuments({ category: b.productCategory })
+        : 0;
       return {
         ...b,
-        categoryInfo: { name: b.productCategory, productCount: count }
-      }
-    }))
-  
+        categoryInfo: { 
+          name: b.productCategory || 'Uncategorized',
+          productCount: count 
+        }
+      };
+    }));
+
     return res.status(200).json({
       items: enriched,
       total,
       limit: Number(limit),
       offset: Number(offset)
-    })
+    });
   } catch (e) {
-    return res.status(500).json({ message: e?.message || 'Server Error' })
+    return res.status(500).json({ message: e?.message || 'Server Error' });
   }
 }
+
+// Exports are already handled by the 'export' keyword in function declarations

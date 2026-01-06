@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
+    "cloudinary": "^1.41.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "crypto": "^1.0.1",
@@ -37,7 +38,6 @@
     "prettier": "^3.6.2",
     "stripe": "^20.0.0",
     "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-express": "^5.0.1",
-    "cloudinary": "^1.41.0"
+    "swagger-ui-express": "^5.0.1"
   }
 }

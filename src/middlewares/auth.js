@@ -34,9 +34,8 @@ export function requireAdmin(req, res, next) {
 }
 
 export function requireUser(req, res, next) {
-  if (!req.user || req.user.role !== 'user') {
-    console.warn('AUTH_FORBID', { method: req.method, url: req.originalUrl, ip: req.ip, reason: 'user_role_required' })
-    return res.status(403).json({ message: 'Forbidden', reason: 'user_role_required' })
+  if (!req.user) {
+    return res.status(401).json({ message: 'Authentication required' })
   }
   next()
 }

@@ -99,16 +99,12 @@ export async function logout(req, res) {
 export async function sendOtp(req, res) {
   const { email } = req.body || {}
   if (!email || typeof email !== 'string' || !email.includes('@')) {
-    return res.status(400).json({ message: 'Email is required and must be valid' })
+    return res.status(400).json({ message: 'A valid email is required' })
   }
-  let exists = false
-  try {
-    const found = await User.findOne({ email })
-    exists = !!found
-  } catch (_) {}
-  if (exists) return res.status(409).json({ message: 'Email already in use' })
+  
+  // Generate OTP code and expiration
   const code = String(Math.floor(100000 + Math.random() * 900000))
-  const expiresAt = new Date(Date.now() + 10 * 60 * 1000)
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
   try {
     await Otp.create({ email, code, expiresAt })
   } catch (_) {}

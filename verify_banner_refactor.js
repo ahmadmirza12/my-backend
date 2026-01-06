@@ -1,5 +1,5 @@
 
-const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MmZmMDA2YzcxYWM0MzQ1YzEyMzgxMSIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc2NTg4NDM1NywiZXhwIjoxNzY1OTcwNzU3fQ.2J6F_1O-aDVGOBWa45Jt3PfNS_Q0g8uMhD3HTaXMwtY";
+const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MmZmMDA2YzcxYWM0MzQ1YzEyMzgxMSIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc2NzY5MzIxMywiZXhwIjoxODU0MDkzMjEzfQ.5A1TuDZgkOuhzFJCf0-FK-c20CsxnmPGgS2loP_cwkI";
 const bannerImage = "https://res.cloudinary.com/dbnkcdvua/image/upload/v1765560820/products/bojl4i2oswp7tidwzn2k.png";
 const category = "summer";
 const baseUrl = "http://localhost:8000/api/v1";

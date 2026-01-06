@@ -724,6 +724,26 @@ export const openapiSpec = {
       },
     },
     "/api/v1/banners": {
+      get: {
+        tags: ["Banners"],
+        summary: "Get all banners",
+        responses: {
+          200: {
+            description: "List of all banners",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "array",
+                  items: { $ref: "#/components/schemas/Banner" },
+                },
+              },
+            },
+          },
+          500: {
+            description: "Server error",
+          },
+        },
+      },
       post: {
         tags: ["Banners"],
         summary: "Create banner",
